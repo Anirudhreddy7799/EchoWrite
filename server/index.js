@@ -3,7 +3,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import WebSocket from "ws";
+import { AssemblyAI } from "assemblyai";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -22,34 +22,65 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // 1) Open AssemblyAI realtime WebSocket
-  const aaiSocket = new WebSocket(
-    "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000",
-    { headers: { Authorization: AAI_KEY } }
-  );
-
-  aaiSocket.on("open", () => {
-    console.log("AAI WS open for", socket.id);
+  // Initialize AssemblyAI client
+  const client = new AssemblyAI({
+    apiKey: AAI_KEY,
   });
 
-  aaiSocket.on("message", (msg) => {
-    // Parse transcript JSON and send to frontend
-    const data = JSON.parse(msg);
-    if (data.text) {
-      socket.emit("transcript", data.text);
+  // Create transcriber with streaming configuration
+  const transcriber = client.streaming.transcriber({
+    sampleRate: 16_000,
+    formatTurns: true
+  });
+
+  // Set up transcriber event listeners
+  transcriber.on("open", ({ id }) => {
+    console.log(`Session opened with ID: ${id} for client ${socket.id}`);
+  });
+
+  transcriber.on("error", (error) => {
+    console.error("AssemblyAI Error:", error);
+    socket.emit("error", error.message);
+  });
+
+  transcriber.on("close", (code, reason) => {
+    console.log("AssemblyAI session closed:", code, reason);
+  });
+
+  transcriber.on("turn", (turn) => {
+    if (!turn.transcript) {
+      return;
+    }
+    console.log("Transcript:", turn.transcript);
+    socket.emit("transcript", turn.transcript);
+  });
+
+  // Connect to AssemblyAI when client connects
+  transcriber.connect().then(() => {
+    console.log("Connected to AssemblyAI streaming service for client:", socket.id);
+  }).catch((error) => {
+    console.error("Failed to connect to AssemblyAI:", error);
+    socket.emit("error", "Failed to connect to transcription service");
+  });
+
+  // Handle audio chunks from client
+  socket.on("audio-chunk", async (chunk) => {
+    try {
+      // Convert ArrayBuffer to Uint8Array and send to transcriber
+      const audioData = new Uint8Array(chunk);
+      await transcriber.sendAudio(audioData);
+    } catch (error) {
+      console.error("Error sending audio to AssemblyAI:", error);
     }
   });
 
-  // 2) When client sends audio chunk, forward to AssemblyAI
-  socket.on("audio-chunk", (chunk) => {
-    if (aaiSocket.readyState === WebSocket.OPEN) {
-      aaiSocket.send(chunk);
-    }
-  });
-
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log("Client disconnected:", socket.id);
-    aaiSocket.close();
+    try {
+      await transcriber.close();
+    } catch (error) {
+      console.error("Error closing transcriber:", error);
+    }
   });
 });
 
