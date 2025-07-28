@@ -7,6 +7,7 @@ import {
   onAuthStateChanged,
   signOut
 } from "firebase/auth";
+import { createUserProfile, getUserProfile } from "../services/firestore";
 
 const AuthContext = createContext();
 
@@ -17,16 +18,28 @@ export function AuthProvider({ children }) {
 
   // Listen for auth state changes (login, logout)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        // Fetch the Firestore profile
+        const profile = await getUserProfile(u.uid);
+        // Merge Auth user + profile data
+        setUser({ uid: u.uid, email: u.email, ...profile });
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return unsubscribe; 
   }, []);
 
   // Signup function
-  const signup = (email, password) =>
-    createUserWithEmailAndPassword(auth, email, password);
+  const signup = async (email, password) => {
+    // 1. Create the auth user
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    // 2. Create the Firestore document
+    await createUserProfile(cred.user.uid, cred.user.email);
+    return cred;
+  };
 
   // Login function
   const login = (email, password) =>
