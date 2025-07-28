@@ -5,7 +5,7 @@ import { createSession } from "../services/firestore";
 import { useNavigate }   from "react-router-dom";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate          = useNavigate();
 
   // Compute remaining minutes = free (15) + purchased - used
@@ -32,6 +32,12 @@ export default function Dashboard() {
         <p>Free minutes left: {Math.max(freeMinutes - (user.usedMinutes || 0), 0)}</p>
         <p>Purchased minutes: {user.purchasedMinutes || 0}</p>
         <p className="font-semibold">Total remaining: {remaining}</p>
+        <button
+          onClick={refreshUser}
+          className="mt-2 text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+        >
+          Refresh Data
+        </button>
       </div>
 
       <button

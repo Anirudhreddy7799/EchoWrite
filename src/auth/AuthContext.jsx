@@ -48,8 +48,16 @@ export function AuthProvider({ children }) {
   // Logout function
   const logout = () => signOut(auth);
 
+  // Refresh user profile data
+  const refreshUser = async () => {
+    if (user && user.uid) {
+      const profile = await getUserProfile(user.uid);
+      setUser({ uid: user.uid, email: user.email, ...profile });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signup, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, signup, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
