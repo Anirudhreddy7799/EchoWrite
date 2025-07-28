@@ -5,7 +5,9 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
-  increment
+  increment,
+  collection,
+  addDoc
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -41,4 +43,15 @@ export async function addPurchasedMinutes(uid, delta) {
   await updateDoc(userRef, {
     purchasedMinutes: increment(delta)
   });
+}
+
+// 5) Create a new transcription session
+export async function createSession(userId) {
+  const sessionsCol = collection(db, "sessions");
+  const docRef = await addDoc(sessionsCol, {
+    userId,
+    createdAt: serverTimestamp(),
+    usedMinutes: 0
+  });
+  return docRef.id; // sessionId
 }

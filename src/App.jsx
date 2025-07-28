@@ -6,6 +6,7 @@ import { useAuth } from "./auth/AuthContext";
 import Signup    from "./pages/Signup";
 import Login     from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Conversation from "./pages/Conversation";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -15,6 +16,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/c/:sessionId" element={<Conversation />} />
       <Route
         path="/"
         element={user ? <Dashboard /> : <Navigate to="/login" replace />}
