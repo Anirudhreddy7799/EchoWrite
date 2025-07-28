@@ -1,9 +1,32 @@
+// src/App.jsx
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./auth/AuthContext";
+
+import Signup    from "./pages/Signup";
+import Login     from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+
 export default function App() {
+  const { user, loading } = useAuth();
+
+  // Show nothing while auth state is loading
+  if (loading) return null;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <h1 className="text-5xl font-extrabold text-indigo-600">
-        EchoWrite 🚀
-      </h1>
-    </div>
+    <Routes>
+      <Route
+        path="/"
+        element={user ? <Dashboard /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/signup"
+        element={!user ? <Signup /> : <Navigate to="/" replace />}
+      />
+      <Route
+        path="/login"
+        element={!user ? <Login /> : <Navigate to="/" replace />}
+      />
+    </Routes>
   );
 }
