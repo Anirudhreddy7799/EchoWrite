@@ -7,6 +7,7 @@ import Signup    from "./pages/Signup";
 import Login     from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Conversation from "./pages/Conversation";
+import BuyMinutes from "./pages/BuyMinutes";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/c/:sessionId" element={<Conversation />} />
+      <Route path="/buy" element={user ? <BuyMinutes /> : <Navigate to="/login" replace />} />
       <Route
         path="/"
         element={user ? <Dashboard /> : <Navigate to="/login" replace />}

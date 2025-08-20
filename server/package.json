@@ -12,9 +12,12 @@
   "description": "",
   "dependencies": {
     "assemblyai": "^4.14.0",
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "socket.io": "^4.8.1"
+    "firebase": "^12.0.0",
+    "socket.io": "^4.8.1",
+    "stripe": "^18.3.0"
   }
 }
